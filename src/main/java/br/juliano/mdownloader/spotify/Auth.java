@@ -1,22 +1,33 @@
-package br.juliano.mdownloader.Spotify;
+package br.juliano.mdownloader.spotify;
 
 import org.apache.hc.core5.http.ParseException;
 import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.SpotifyHttpManager;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.credentials.ClientCredentials;
+import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest;
+import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
 import se.michaelthelin.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
 
 import java.io.IOException;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.net.URI;
 
 public class Auth {
+    //authorization code request: https://github.com/spotify-web-api-java/spotify-web-api-java/blob/master/examples/authorization/authorization_code/AuthorizationCodeExample.java
     private static final String ClientId = ApiKeys.CLIENT_ID;
     private static final String ClientSecret = ApiKeys.CLIENT_SECRET;
+    private static final URI redirectUri = SpotifyHttpManager.makeUri("https://localhost/callback/");
+    private static final String code = ApiKeys.CODE;
 
-  protected static final SpotifyApi Sapi = new SpotifyApi.Builder().setClientId(ClientId).setClientSecret(ClientSecret).build();
+  protected static final SpotifyApi Sapi = new SpotifyApi.Builder().setClientId(ClientId).setClientSecret(ClientSecret).setRedirectUri(redirectUri).build();
+    private static final AuthorizationCodeRequest authorizationCodeRequest = Sapi.authorizationCode(code).build();
+    private static final AuthorizationCodeUriRequest authorizationCodeUriRequest = Sapi.authorizationCodeUri().show_dialog(true).response_type("code").scope("user-read-private,user-read-email").build();
 
+    public static void authorizationCodeUri_Sync(){
+        final URI uri = authorizationCodeUriRequest.execute();
+
+        System.out.println("URI: " + uri.toString());
+    }
     private static final ClientCredentialsRequest clientCredentialsRequest = Sapi.clientCredentials().build();
 
     public static void clientCredentials_Sync() {
@@ -30,10 +41,6 @@ public class Auth {
             System.out.println("Error: " + e.getMessage());
         }
     }
-    public static void expiresToken(){
-
-    }
-
 //    public static void clientCredentials_Async() {
 //        try {
 //            final CompletableFuture<ClientCredentials> clientCredentialsFuture = clientCredentialsRequest.executeAsync();
@@ -54,10 +61,10 @@ public class Auth {
 //        }
 //    }
 
-//    public static void main(String[] args) {
-//        clientCredentials_Sync();
-//        clientCredentials_Async();
-//
-//        System.out.println(Sapi.getAccessToken());
-//    }
+    public static void main(String[] args) {
+        clientCredentials_Sync();
+        authorizationCodeUri_Sync();
+
+        System.out.println(Sapi.getAccessToken());
+    }
 }
